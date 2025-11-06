@@ -502,32 +502,21 @@ textarea {
 }
 
 @media (max-width: 600px) {
-  /* Show FAB on mobile */
+  /* Hide FAB on mobile to match desktop behavior */
   .fab {
-    display: inline-flex;
-  }
-
-  /* Hide the desktop side panel by default on mobile */
-  .side {
     display: none;
   }
 
-  /* Show events as a bottom sheet */
-  .events-sheet {
-    display: block;
-    position: fixed;
-    left: 8px;
-    right: 8px;
-    bottom: 8px;
-    max-height: 62vh;
-    overflow: auto;
-    background: var(--card);
-    border-radius: 12px;
-    padding: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.04);
-    z-index: 70;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+  /* Keep the desktop side panel visible on mobile (match desktop) */
+  .side {
+    display: flex;
   }
+
+  /* Do not use bottom sheet on mobile when matching desktop — keep it hidden */
+  .events-sheet {
+    display: none;
+  }
+
   .events-sheet .sheet-header {
     display: flex;
     align-items: center;

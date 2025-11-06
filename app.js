@@ -1,5 +1,6 @@
 // Calendar app for "Arquipélago da Nascente" - year 2016
-(() => {
+(function(){
+  'use strict';
   const EVENTS_KEY = 'nascente-calendar-2016';
   const YEAR = 2016;
 
@@ -73,6 +74,31 @@
       return a === b;
     }
   }
+  // Cross-browser helpers
+  // Object.values fallback for older browsers (IE11)
+  function objValues(obj){
+    if(Object.values) return Object.values(obj);
+    var ks = Object.keys(obj||{}), res = [];
+    for(var i=0;i<ks.length;i++) res.push(obj[ks[i]]);
+    return res;
+  }
+  // Element.closest() fallback
+  function closest(el, selector){
+    if(!el) return null;
+    var matches = (el.matches || el.msMatchesSelector || el.webkitMatchesSelector);
+    while(el && el !== document){
+      if(el.nodeType === 1 && matches && matches.call(el, selector)) return el;
+      el = el.parentElement;
+    }
+    return null;
+  }
+  // passive event listener feature detect
+  var supportsPassive = false;
+  try{
+    var opts = Object.defineProperty({}, 'passive', { get: function(){ supportsPassive = true; } });
+    window.addEventListener('testPassive', null, opts);
+    window.removeEventListener('testPassive', null, opts);
+  }catch(e){}
   function displayMonthLabel(m, y){
     const months = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
     monthLabel.textContent = `${months[m]} ${y}`;
@@ -139,7 +165,7 @@
     dotWrap.className = 'event-dot';
     el.appendChild(dotWrap);
 
-  const dayEvents = Object.values(events).filter(e => isSameISO(e.date, dateISO));
+  const dayEvents = objValues(events).filter(function(e){ return isSameISO(e.date, dateISO); });
     dayEvents.slice(0,5).forEach(ev => {
       const dot = document.createElement('div');
       dot.className = 'dot ' + (ev.type === 'exam' ? 'exam' : (ev.type === 'holiday' ? 'holiday' : 'event'));
@@ -169,7 +195,12 @@
       pressTimer = setTimeout(()=>{ openModalForDate(dateISO); }, pressHold);
     }
     function cancelPress(){ if(pressTimer){ clearTimeout(pressTimer); pressTimer = null; } }
-    el.addEventListener('touchstart', startPress, {passive:true});
+    try{
+      el.addEventListener('touchstart', startPress, supportsPassive ? {passive:true} : false);
+    }catch(e){
+      // fallback for very old browsers
+      el.addEventListener('touchstart', startPress);
+    }
     el.addEventListener('touchmove', cancelPress);
     el.addEventListener('touchend', cancelPress);
     el.addEventListener('touchcancel', cancelPress);
@@ -179,27 +210,25 @@
     return el;
   }
 
-  // select a date (do not immediately open modal) — more friendly on mobile
+  // select a date (do not immediately open modal)
+  // Always show the desktop side panel and render its events list.
+  // This makes mobile behave the same as desktop (side panel visible, no bottom sheet).
   function selectDate(dateISO){
     selectedDateISO = dateISO;
-    // ensure side panel visible on small screens
-    // hide desktop side on small screens and show a bottom sheet instead
-    if(window.innerWidth <= 600){
-      if(side) side.classList.add('collapsed');
-      renderMobileEventsSheet(dateISO);
-    } else {
-      if(side && side.classList.contains('collapsed')){
-        side.classList.remove('collapsed');
-        if(toggleSideBtn) toggleSideBtn.textContent = '✕';
-      }
-      renderEventsListForDate(dateISO);
+    // ensure side panel is visible
+    if(side && side.classList.contains('collapsed')){
+      side.classList.remove('collapsed');
+      if(toggleSideBtn) toggleSideBtn.textContent = '✕';
     }
+    // render the events list into the side panel
+    renderEventsListForDate(dateISO);
+    // re-render calendar to update selected state
     renderCalendar();
   }
 
   function renderMobileEventsSheet(dateISO){
     if(!mobileSheet) return;
-  const list = Object.values(events).filter(e => isSameISO(e.date, dateISO)).sort((a,b)=> (a.time||'') > (b.time||'') ? 1:-1);
+  const list = objValues(events).filter(function(e){ return isSameISO(e.date, dateISO); }).sort(function(a,b){ return (a.time||'') > (b.time||'') ? 1 : -1; });
     // friendly header (weekday, day month)
     let headerDate = dateISO;
     try{
@@ -227,21 +256,27 @@
     // attach delegated listener on mobileSheet (remove previous if any)
     if(mobileSheetHandler) mobileSheet.removeEventListener('click', mobileSheetHandler);
     mobileSheetHandler = function(e){
-      const close = e.target.closest('.close-sheet');
+      var close = closest(e.target, '.close-sheet');
       if(close){
         mobileSheet.classList.remove('open');
-        mobileSheet.addEventListener('transitionend', ()=> mobileSheet.classList.add('hidden'), {once:true});
+        (function(){
+          var onEnd = function(){ mobileSheet.classList.add('hidden'); mobileSheet.removeEventListener('transitionend', onEnd); };
+          mobileSheet.addEventListener('transitionend', onEnd);
+        })();
         return;
       }
-      const newBtn = e.target.closest('#sheetNew');
+      var newBtn = closest(e.target, '#sheetNew');
       if(newBtn){
         mobileSheet.classList.remove('open');
-        mobileSheet.addEventListener('transitionend', ()=> { mobileSheet.classList.add('hidden'); openModalForDate(dateISO); }, {once:true});
+        (function(){
+          var onEnd2 = function(){ mobileSheet.classList.add('hidden'); mobileSheet.removeEventListener('transitionend', onEnd2); openModalForDate(dateISO); };
+          mobileSheet.addEventListener('transitionend', onEnd2);
+        })();
         return;
       }
-      const item = e.target.closest('.event-item');
+      var item = closest(e.target, '.event-item');
       if(item){
-        openEditEvent(item.dataset.id);
+        openEditEvent(item.getAttribute('data-id'));
         return;
       }
     };
@@ -262,7 +297,7 @@
       const date = selectedDateISO || formatDateISO(new Date());
       if(mobileSheet && mobileSheet.classList.contains('open')){
         mobileSheet.classList.remove('open');
-        mobileSheet.addEventListener('transitionend', ()=> mobileSheet.classList.add('hidden'), {once:true});
+  (function(){ var onEnd3 = function(){ mobileSheet.classList.add('hidden'); mobileSheet.removeEventListener('transitionend', onEnd3); }; mobileSheet.addEventListener('transitionend', onEnd3); })();
       }
       openModalForDate(date);
     });
@@ -286,7 +321,7 @@
     // hide mobile sheet if open (animated)
     if(mobileSheet && mobileSheet.classList.contains('open')){
       mobileSheet.classList.remove('open');
-      mobileSheet.addEventListener('transitionend', ()=> mobileSheet.classList.add('hidden'), {once:true});
+  (function(){ var onEnd4 = function(){ mobileSheet.classList.add('hidden'); mobileSheet.removeEventListener('transitionend', onEnd4); }; mobileSheet.addEventListener('transitionend', onEnd4); })();
     }
     // setup focus trap
     lastFocusedElement = document.activeElement;
@@ -323,8 +358,8 @@
     if(modalKeyHandler) document.removeEventListener('keydown', modalKeyHandler);
     if(lastFocusedElement) lastFocusedElement.focus();
   }
-  closeModal.addEventListener('click', closeModalFn);
-  newEventBtn.addEventListener('click', ()=> openModalForDate(formatDateISO(new Date(currentYear,currentMonth,1))));
+  if(closeModal) closeModal.addEventListener('click', closeModalFn);
+  if(newEventBtn) newEventBtn.addEventListener('click', function(){ openModalForDate(formatDateISO(new Date(currentYear,currentMonth,1))); });
 
   // toggle side panel (mobile)
   if(toggleSideBtn){
@@ -346,10 +381,18 @@
     const type = evtType.value;
 
     if(editingId){
-      events[editingId] = {...events[editingId], title, date, time, desc, type};
+      var prev = events[editingId] || {};
+      var merged = {};
+      for(var kk in prev) if(Object.prototype.hasOwnProperty.call(prev,kk)) merged[kk]=prev[kk];
+      merged.title = title;
+      merged.date = date;
+      merged.time = time;
+      merged.desc = desc;
+      merged.type = type;
+      events[editingId] = merged;
     } else {
-      const id = uid();
-      events[id] = {id, title, date, time, desc, type};
+      var id = uid();
+      events[id] = {id: id, title: title, date: date, time: time, desc: desc, type: type};
     }
     saveEvents();
     renderCalendar();
@@ -359,7 +402,7 @@
     if(mobileSheet && window.innerWidth <= 600){
       if(mobileSheet.classList.contains('open')){
         mobileSheet.classList.remove('open');
-        mobileSheet.addEventListener('transitionend', ()=> mobileSheet.classList.add('hidden'), {once:true});
+  (function(){ var onEnd5 = function(){ mobileSheet.classList.add('hidden'); mobileSheet.removeEventListener('transitionend', onEnd5); }; mobileSheet.addEventListener('transitionend', onEnd5); })();
       } else {
         mobileSheet.classList.add('hidden');
       }
@@ -369,7 +412,7 @@
   // render events sidebar for given date
   function renderEventsListForDate(dateISO){
     eventsList.innerHTML = '';
-    const list = Object.values(events).filter(e => isSameISO(e.date, dateISO)).sort((a,b)=> (a.time||'') > (b.time||'') ? 1:-1);
+  var list = objValues(events).filter(function(e){ return isSameISO(e.date, dateISO); }).sort(function(a,b){ return (a.time||'') > (b.time||'') ? 1 : -1; });
     if(list.length===0){
       const li = document.createElement('li');
       li.textContent = 'Sem eventos nesta data.';
@@ -446,7 +489,7 @@
   });
 
   // navigation
-  prevBtn.addEventListener('click', ()=> {
+  if(prevBtn) prevBtn.addEventListener('click', function(){
     currentMonth--;
     if(currentMonth < 0){ currentMonth = 11; currentYear--; }
     // keep selection within the shown month (use first day if needed)
@@ -454,7 +497,7 @@
     renderCalendar();
     renderEventsListForDate(selectedDateISO);
   });
-  nextBtn.addEventListener('click', ()=> {
+  if(nextBtn) nextBtn.addEventListener('click', function(){
     currentMonth++;
     if(currentMonth > 11){ currentMonth = 0; currentYear++; }
     selectedDateISO = formatDateISO(new Date(currentYear,currentMonth,1));
@@ -463,18 +506,18 @@
   });
 
   // export/import
-  exportBtn.addEventListener('click', ()=>{
-    const blob = new Blob([JSON.stringify(events,null,2)], {type:'application/json'});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+  if(exportBtn) exportBtn.addEventListener('click', function(){
+    var blob = new Blob([JSON.stringify(events,null,2)], {type:'application/json'});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
     a.href = url;
-    a.download = `nascente-events-2016.json`;
+    a.download = 'nascente-events-2016.json';
     a.click();
     URL.revokeObjectURL(url);
   });
 
-  importBtn.addEventListener('click', ()=> importFile.click());
-  importFile.addEventListener('change', (e) => {
+  if(importBtn) importBtn.addEventListener('click', function(){ if(importFile) importFile.click(); });
+  if(importFile) importFile.addEventListener('change', function(e){
     const f = e.target.files[0];
     if(!f) return;
     const reader = new FileReader();
@@ -484,19 +527,28 @@
         const incoming = {};
         // support array or object
         if(Array.isArray(parsed)){
-          parsed.forEach(item => {
+          for(var i=0;i<parsed.length;i++){
+            var item = parsed[i];
             if(!item || !item.title || !item.date) throw new Error('Formato inválido');
-            const id = item.id || uid();
-            incoming[id] = {...item, id};
-          });
+            var id = item.id || uid();
+            // shallow copy
+            var copy = {};
+            for(var k in item) if(Object.prototype.hasOwnProperty.call(item,k)) copy[k]=item[k];
+            copy.id = id;
+            incoming[id] = copy;
+          }
         } else if(parsed && typeof parsed === 'object'){
           // if object has keys like id->{...} or is map
-          const vals = Object.values(parsed);
+          var vals = objValues(parsed);
           if(vals.length && vals[0] && vals[0].title && vals[0].date){
-            vals.forEach(item => {
-              const id = item.id || uid();
-              incoming[id] = {...item, id};
-            });
+            for(var j=0;j<vals.length;j++){
+              var item2 = vals[j];
+              var id2 = item2.id || uid();
+              var copy2 = {};
+              for(var kk in item2) if(Object.prototype.hasOwnProperty.call(item2,kk)) copy2[kk]=item2[kk];
+              copy2.id = id2;
+              incoming[id2] = copy2;
+            }
           } else {
             throw new Error('Formato inválido');
           }
@@ -520,22 +572,19 @@
   function ensureInitial(){
     loadEvents();
     const firstClassDate = '2016-02-10';
-    const exists = Object.values(events).some(e => e.date === firstClassDate && e.title.toLowerCase().includes('aulas'));
+  var exists = objValues(events).some(function(e){ return e.date === firstClassDate && (e.title || '').toLowerCase().indexOf('aulas') !== -1; });
     if(!exists){
-      const id = uid();
-      events[id] = {id, title: 'Início das aulas (1º ano)', date: firstClassDate, time: '07:00', desc: 'Primeiro dia do ano letivo na Kurohana — aulas em período integral', type: 'event'};
+      var id = uid();
+      events[id] = {id: id, title: 'Início das aulas (1º ano)', date: firstClassDate, time: '07:00', desc: 'Primeiro dia do ano letivo na Kurohana — aulas em período integral', type: 'event'};
       saveEvents();
     }
   }
 
   // clicking outside modal closes it
-  modal.addEventListener('click', (ev) => {
-    if(ev.target === modal) closeModalFn();
-  });
+  if(modal) modal.addEventListener('click', function(ev){ if(ev.target === modal) closeModalFn(); });
 
   // start
   ensureInitial();
-  loadEvents();
   renderCalendar();
   // initial selection: first day of current shown month
   selectedDateISO = formatDateISO(new Date(currentYear,currentMonth,1));
