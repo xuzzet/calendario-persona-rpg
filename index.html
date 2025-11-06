@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Calendário — Arquipélago da Nascente (2016)</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="brand">
+        <h1>Calendário — Arquipélago da Nascente</h1>
+        <p class="subtitle">Ano letivo 2016 · Kurohana — anote provas e eventos</p>
+      </div>
+      <div class="controls">
+        <button id="prevMonth" class="btn">◀</button>
+        <div id="monthLabel" class="month-label">Fevereiro 2016</div>
+        <button id="nextMonth" class="btn">▶</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="calendar-section">
+        <div class="weekdays">
+          <div>Dom</div><div>Seg</div><div>Ter</div><div>Qua</div><div>Qui</div><div>Sex</div><div>Sáb</div>
+        </div>
+        <div id="calendarGrid" class="calendar-grid"></div>
+      </section>
+
+      <aside class="side">
+        <div class="side-top">
+          <button id="newEventBtn" class="primary">+ Novo Evento</button>
+          <button id="exportBtn" class="secondary">Exportar (JSON)</button>
+          <input id="importFile" type="file" accept="application/json" style="display:none" />
+          <button id="importBtn" class="secondary">Importar (JSON)</button>
+        </div>
+
+        <div class="events-list">
+          <h3>Eventos (selecionado)</h3>
+          <ul id="eventsList"></ul>
+        </div>
+
+        <div class="legend">
+          <div><span class="dot exam"></span>Prova</div>
+          <div><span class="dot event"></span>Evento</div>
+          <div><span class="dot holiday"></span>Folga/Tarde livre</div>
+        </div>
+      </aside>
+    </main>
+
+    <!-- Modal -->
+    <div id="modal" class="modal hidden" aria-hidden="true">
+      <div class="modal-content">
+        <button id="closeModal" class="modal-close">&times;</button>
+        <h2 id="modalTitle">Novo evento</h2>
+        <form id="eventForm">
+          <label>Tipo
+            <select id="evtType">
+              <option value="event">Evento</option>
+              <option value="exam">Prova</option>
+              <option value="holiday">Folga (tarde)</option>
+            </select>
+          </label>
+
+          <label>Título
+            <input id="evtTitle" type="text" required placeholder="Ex: Prova de Matemática" />
+          </label>
+
+          <label>Data
+            <input id="evtDate" type="date" required />
+          </label>
+
+          <label>Hora (opcional)
+            <input id="evtTime" type="time" />
+          </label>
+
+          <label>Descrição (opcional)
+            <textarea id="evtDesc" rows="3" placeholder="Observações, sala, professor..."></textarea>
+          </label>
+
+          <div class="modal-actions">
+            <button type="submit" class="primary">Salvar</button>
+            <button type="button" id="deleteEventBtn" class="danger hidden">Excluir</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <footer>
+      <small>Dados salvos no seu navegador. Exportar/Importar para compartilhar com o grupo.</small>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
