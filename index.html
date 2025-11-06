@@ -14,6 +14,7 @@
         <p class="subtitle">Ano letivo 2016 · Kurohana — anote provas e eventos</p>
       </div>
       <div class="controls">
+        <button id="toggleSide" class="btn" aria-label="Alternar painel">☰</button>
         <button id="prevMonth" class="btn">◀</button>
         <div id="monthLabel" class="month-label">Fevereiro 2016</div>
         <button id="nextMonth" class="btn">▶</button>
@@ -37,7 +38,10 @@
         </div>
 
         <div class="events-list">
-          <h3>Eventos (selecionado)</h3>
+          <div class="events-list-header">
+            <h3>Eventos (selecionado)</h3>
+            <button id="listNewBtn" class="secondary list-new">+ Novo</button>
+          </div>
           <ul id="eventsList"></ul>
         </div>
 
@@ -90,6 +94,11 @@
     <footer>
       <small>Dados salvos no seu navegador. Exportar/Importar para compartilhar com o grupo.</small>
     </footer>
+    <!-- Mobile events bottom sheet (shown only on small screens) -->
+    <div id="mobileEventsSheet" class="events-sheet hidden" aria-hidden="true"></div>
+
+    <!-- Floating action button -->
+    <button id="fab" class="primary fab" aria-label="Novo evento">+</button>
   </div>
 
   <script src="app.js"></script>

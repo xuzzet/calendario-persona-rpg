@@ -122,6 +122,12 @@ main {
 .day.off {
   opacity: 0.35;
 }
+/* selected day styling */
+.day.selected {
+  box-shadow: 0 0 0 2px rgba(68, 177, 255, 0.12) inset,
+    0 6px 18px rgba(68, 177, 255, 0.06);
+  border: 1px solid rgba(68, 177, 255, 0.18);
+}
 .event-dot {
   position: absolute;
   left: 8px;
@@ -129,6 +135,7 @@ main {
   display: flex;
   gap: 6px;
   flex-wrap: wrap;
+  z-index: 3; /* ensure dots are visible above other low-z elements */
 }
 .dot {
   width: 10px;
@@ -150,6 +157,10 @@ main {
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+/* collapsed side (used on small screens) */
+.side.collapsed {
+  display: none;
 }
 .side-top {
   display: flex;
@@ -183,6 +194,21 @@ main {
 .events-list h3 {
   margin: 0 0 8px 0;
   color: var(--muted);
+}
+.events-list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  gap: 8px;
+}
+.events-list-header h3 {
+  margin: 0;
+  font-size: 15px;
+}
+.list-new {
+  padding: 6px 8px;
+  border-radius: 8px;
 }
 .events-list ul {
   list-style: none;
@@ -342,6 +368,13 @@ textarea {
     flex-wrap: wrap;
     align-items: center;
   }
+  /* show toggle button on phones, keep other buttons compact */
+  #toggleSide {
+    display: inline-flex;
+  }
+  .controls .btn {
+    min-width: 44px;
+  }
   #prevMonth,
   #nextMonth {
     flex: 0 0 48px;
@@ -404,6 +437,10 @@ textarea {
   .event-item {
     padding: 10px;
   }
+  /* hide the desktop list-new button on small screens; mobile sheet has its own + Novo */
+  .events-list-header .list-new {
+    display: none;
+  }
 
   /* modal: full width and taller on small devices, easier to dismiss */
   .modal-content {
@@ -432,5 +469,88 @@ textarea {
   select,
   textarea {
     font-size: 14px;
+  }
+}
+
+/* Hide toggle button on larger screens */
+#toggleSide {
+  display: none;
+}
+
+/* Floating Action Button */
+.fab {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  font-size: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+  z-index: 60;
+}
+
+/* Mobile events bottom sheet */
+.events-sheet.hidden {
+  display: none;
+}
+.events-sheet {
+  display: none; /* default: hidden on desktop */
+}
+
+@media (max-width: 600px) {
+  /* Show FAB on mobile */
+  .fab {
+    display: inline-flex;
+  }
+
+  /* Hide the desktop side panel by default on mobile */
+  .side {
+    display: none;
+  }
+
+  /* Show events as a bottom sheet */
+  .events-sheet {
+    display: block;
+    position: fixed;
+    left: 8px;
+    right: 8px;
+    bottom: 8px;
+    max-height: 62vh;
+    overflow: auto;
+    background: var(--card);
+    border-radius: 12px;
+    padding: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    z-index: 70;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+  }
+  .events-sheet .sheet-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  .events-sheet .close-sheet {
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    font-size: 20px;
+  }
+}
+
+/* sheet open state */
+.events-sheet.open {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+@media (min-width: 601px) {
+  /* hide FAB on larger screens to prefer side panel */
+  .fab {
+    display: none;
   }
 }
