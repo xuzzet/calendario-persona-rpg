@@ -27,6 +27,7 @@
   const fabBtn = document.getElementById('fab');
   const mobileSheet = document.getElementById('mobileEventsSheet');
   const listNewBtn = document.getElementById('listNewBtn');
+  let mobileSheetHandler = null;
 
   // state
   let currentMonth = 1; // February (0-based will be converted)
@@ -205,7 +206,7 @@
       const d = new Date(dateISO + 'T00:00:00');
       headerDate = d.toLocaleDateString('pt-BR', {weekday:'short', day:'2-digit', month:'short'});
     }catch(e){}
-    let html = `<div class="sheet-header"><strong>${headerDate}</strong><div><button class="close-sheet" aria-label="Fechar">✕</button><button id="sheetNew" class="primary" style="margin-left:8px">+ Novo</button></div></div>`;
+  let html = `<div class="sheet-header"><strong>${headerDate}</strong><div><button type="button" class="close-sheet" aria-label="Fechar">✕</button><button type="button" id="sheetNew" class="primary" style="margin-left:8px">+ Novo</button></div></div>`;
     if(list.length===0){
       html += `<div style="color:var(--muted);">Sem eventos nesta data.</div>`;
     } else {
@@ -223,20 +224,28 @@
     void mobileSheet.offsetWidth;
     mobileSheet.classList.add('open');
 
-    // attach listeners: close button, new button, event items
-    const closeBtn = mobileSheet.querySelector('.close-sheet');
-    if(closeBtn) closeBtn.addEventListener('click', ()=> {
-      mobileSheet.classList.remove('open');
-      mobileSheet.addEventListener('transitionend', ()=> mobileSheet.classList.add('hidden'), {once:true});
-    });
-    const sheetNew = mobileSheet.querySelector('#sheetNew');
-    if(sheetNew) sheetNew.addEventListener('click', ()=> {
-      mobileSheet.classList.remove('open');
-      mobileSheet.addEventListener('transitionend', ()=> { mobileSheet.classList.add('hidden'); openModalForDate(dateISO); }, {once:true});
-    });
-    mobileSheet.querySelectorAll('.event-item').forEach(li => {
-      li.addEventListener('click', ()=> openEditEvent(li.dataset.id));
-    });
+    // attach delegated listener on mobileSheet (remove previous if any)
+    if(mobileSheetHandler) mobileSheet.removeEventListener('click', mobileSheetHandler);
+    mobileSheetHandler = function(e){
+      const close = e.target.closest('.close-sheet');
+      if(close){
+        mobileSheet.classList.remove('open');
+        mobileSheet.addEventListener('transitionend', ()=> mobileSheet.classList.add('hidden'), {once:true});
+        return;
+      }
+      const newBtn = e.target.closest('#sheetNew');
+      if(newBtn){
+        mobileSheet.classList.remove('open');
+        mobileSheet.addEventListener('transitionend', ()=> { mobileSheet.classList.add('hidden'); openModalForDate(dateISO); }, {once:true});
+        return;
+      }
+      const item = e.target.closest('.event-item');
+      if(item){
+        openEditEvent(item.dataset.id);
+        return;
+      }
+    };
+    mobileSheet.addEventListener('click', mobileSheetHandler);
   }
 
   // header list +Novo button (desktop) — open modal for selected date
