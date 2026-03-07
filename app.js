@@ -572,12 +572,65 @@
   function ensureInitial(){
     loadEvents();
     const firstClassDate = '2016-02-10';
-  var exists = objValues(events).some(function(e){ return e.date === firstClassDate && (e.title || '').toLowerCase().indexOf('aulas') !== -1; });
-    if(!exists){
-      var id = uid();
-      events[id] = {id: id, title: 'Início das aulas (1º ano)', date: firstClassDate, time: '07:00', desc: 'Primeiro dia do ano letivo na Kurohana — aulas em período integral', type: 'event'};
-      saveEvents();
+    var changed = false;
+
+    function hasEventExact(title, date){
+      var normalizedTitle = String(title || '').trim().toLowerCase();
+      return objValues(events).some(function(e){
+        return e.date === date && String(e.title || '').trim().toLowerCase() === normalizedTitle;
+      });
     }
+
+    function addSeedEvent(title, date, type, time, desc){
+      if(hasEventExact(title, date)) return;
+      var id = uid();
+      events[id] = {
+        id: id,
+        title: title,
+        date: date,
+        time: time || '',
+        desc: desc || '',
+        type: type || 'event'
+      };
+      changed = true;
+    }
+
+    function addRangeSeedEvents(startDay, endDay, monthIndex, title, type){
+      for(var d = startDay; d <= endDay; d++){
+        var dateISO = formatDateISO(new Date(YEAR, monthIndex, d));
+        addSeedEvent(title, dateISO, type);
+      }
+    }
+
+    var hasClassStart = objValues(events).some(function(e){ return e.date === firstClassDate && (e.title || '').toLowerCase().indexOf('aulas') !== -1; });
+    if(!hasClassStart){
+      addSeedEvent(
+        'Início das aulas (1º ano)',
+        firstClassDate,
+        'event',
+        '07:00',
+        'Primeiro dia do ano letivo na Kurohana — aulas em período integral'
+      );
+    }
+
+    addSeedEvent('Prova diagnóstica', '2016-02-24', 'exam');
+    addSeedEvent('Prova parcial', '2016-03-17', 'exam');
+    addSeedEvent('Prova de Ciências/Geografia', '2016-04-22', 'exam');
+    addSeedEvent('Prova parcial', '2016-05-20', 'exam');
+    addRangeSeedEvents(11, 15, 6, 'Provas de meio de ano', 'exam');
+    addSeedEvent('Avaliação de retorno', '2016-09-16', 'exam');
+    addSeedEvent('Prova parcial', '2016-10-21', 'exam');
+    addRangeSeedEvents(14, 18, 10, 'Provas finais', 'exam');
+    addSeedEvent('Recuperação', '2016-12-03', 'exam');
+
+    addSeedEvent('Festival cultural', '2016-03-21', 'event');
+    addSeedEvent('Torneio interclubes', '2016-04-18', 'event');
+    addSeedEvent('Excursão pelas ilhas', '2016-05-30', 'event');
+    addSeedEvent('Provas de meio de ano', '2016-07-12', 'exam');
+    addSeedEvent('Festival esportivo', '2016-09-20', 'event');
+    addSeedEvent('Vigília da memória', '2016-12-31', 'event');
+
+    if(changed) saveEvents();
   }
 
   // clicking outside modal closes it
