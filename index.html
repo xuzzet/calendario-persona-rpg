@@ -1,86 +1,198 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Calendário Oficial — Arquipélago da Nascente</title>
+  <title>Calendario Oficial - Arquipelago da Nascente (2016)</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <div class="app">
     <header>
       <div class="brand">
-        <h1>Calendário Oficial — Arquipélago da Nascente</h1>
-        <p class="subtitle">Cultura japonesa-brasileira · Academia Kurohana</p>
+        <h1>Calendario Oficial - Arquipelago da Nascente</h1>
+        <p class="subtitle">Ano da historia: 2016 | Cultura japonesa-brasileira | Academia Kurohana</p>
       </div>
       <div class="controls">
-        <button id="toggleSide" class="btn" aria-label="Alternar painel">☰</button>
-        <button id="prevMonth" class="btn">◀</button>
-        <div id="monthLabel" class="month-label">Janeiro</div>
-        <button id="nextMonth" class="btn">▶</button>
+        <button id="toggleFilters" class="btn">Filtros</button>
+        <button id="todayBtn" class="btn">Hoje (2016)</button>
+        <button id="prevMonth" class="btn" aria-label="Mes anterior">◀</button>
+        <div id="monthLabel" class="month-label">Janeiro 2016</div>
+        <button id="nextMonth" class="btn" aria-label="Proximo mes">▶</button>
       </div>
     </header>
 
+    <section id="filtersPanel" class="filters-panel">
+      <label>Categoria
+        <select id="filterCategory">
+          <option value="all">Todas</option>
+          <option value="civil">Civil da Nascente</option>
+          <option value="escolar">Academia Kurohana</option>
+          <option value="clube">Clubes</option>
+          <option value="comunidade">Comunidade</option>
+        </select>
+      </label>
+      <label>Ilha
+        <select id="filterIsland">
+          <option value="all">Todas</option>
+          <option value="Hanashima">Hanashima</option>
+          <option value="Botan">Botan</option>
+          <option value="Fujiwara">Fujiwara</option>
+          <option value="Sumirejima">Sumirejima</option>
+          <option value="Todas as ilhas">Todas as ilhas</option>
+        </select>
+      </label>
+      <label>Tipo
+        <select id="filterType">
+          <option value="all">Todos</option>
+          <option value="event">Evento</option>
+          <option value="exam">Prova</option>
+          <option value="holiday">Feriado/Folga</option>
+        </select>
+      </label>
+      <div class="view-toggle" role="group" aria-label="Modo de visualizacao">
+        <button id="monthViewBtn" class="secondary active">Modo Mensal</button>
+        <button id="timelineViewBtn" class="secondary">Timeline Anual</button>
+      </div>
+    </section>
+
+    <div id="upcomingAlert" class="upcoming-alert hidden" aria-live="polite"></div>
+
     <main>
-      <section class="calendar-section">
+      <section id="monthView" class="calendar-section">
         <div class="weekdays">
-          <div>Dom</div><div>Seg</div><div>Ter</div><div>Qua</div><div>Qui</div><div>Sex</div><div>Sáb</div>
+          <div>Dom</div><div>Seg</div><div>Ter</div><div>Qua</div><div>Qui</div><div>Sex</div><div>Sab</div>
         </div>
         <div id="calendarGrid" class="calendar-grid"></div>
       </section>
 
+      <section id="timelineView" class="timeline-view hidden"></section>
+
       <aside class="side">
         <div class="side-top">
           <button id="newEventBtn" class="primary">+ Novo Evento</button>
-          <button id="exportBtn" class="secondary">Exportar (JSON)</button>
-          <input id="importFile" type="file" accept="application/json" style="display:none" />
-          <button id="importBtn" class="secondary">Importar (JSON)</button>
+          <button id="exportBtn" class="secondary">Exportar JSON</button>
+          <button id="exportMdBtn" class="secondary">Exportar Markdown</button>
+          <button id="exportPdfBtn" class="secondary">Exportar PDF</button>
+          <input id="importFile" type="file" accept="application/json" class="hidden" />
+          <button id="importBtn" class="secondary">Importar JSON</button>
         </div>
 
         <div class="events-list">
           <div class="events-list-header">
-            <h3>Eventos (selecionado)</h3>
+            <h3>Eventos da data selecionada</h3>
             <button id="listNewBtn" class="secondary list-new">+ Novo</button>
           </div>
           <ul id="eventsList"></ul>
         </div>
 
+        <div class="summary-card">
+          <h3>Resumo do Ano Escolar da Kurohana</h3>
+          <ul>
+            <li>10/02: inicio das aulas</li>
+            <li>Fim de fevereiro: primeira semana de provas</li>
+            <li>Marco: clubes, integracao e festival cultural</li>
+            <li>Abril: festival da primavera</li>
+            <li>Maio: feira cultural</li>
+            <li>Junho: festa junina</li>
+            <li>Julho: festival de verao e ferias</li>
+            <li>Fim de agosto: retorno das aulas</li>
+            <li>Setembro: campeonato das quatro ilhas</li>
+            <li>Outubro: festival das mascaras</li>
+            <li>Novembro: eventos culturais</li>
+            <li>Dezembro: provas finais, formatura e memoria da tragedia</li>
+            <li>Janeiro: ferias e ano novo</li>
+          </ul>
+        </div>
+
         <div class="legend">
           <div><span class="dot exam"></span>Prova</div>
           <div><span class="dot event"></span>Evento</div>
-          <div><span class="dot holiday"></span>Folga/Tarde livre</div>
+          <div><span class="dot holiday"></span>Feriado/Folga</div>
+          <div><span class="dot lore"></span>Lore-chave</div>
         </div>
       </aside>
     </main>
 
-    <!-- Modal -->
     <div id="modal" class="modal hidden" aria-hidden="true">
       <div class="modal-content">
-        <button id="closeModal" class="modal-close">&times;</button>
+        <button id="closeModal" class="modal-close" aria-label="Fechar">&times;</button>
         <h2 id="modalTitle">Novo evento</h2>
         <form id="eventForm">
           <label>Tipo
             <select id="evtType">
               <option value="event">Evento</option>
               <option value="exam">Prova</option>
-              <option value="holiday">Folga (tarde)</option>
+              <option value="holiday">Feriado/Folga</option>
             </select>
           </label>
 
-          <label>Título
-            <input id="evtTitle" type="text" required placeholder="Ex: Prova de Matemática" />
+          <label>Categoria
+            <select id="evtCategory">
+              <option value="civil">Civil da Nascente</option>
+              <option value="escolar">Academia Kurohana</option>
+              <option value="clube">Clube</option>
+              <option value="comunidade">Comunidade</option>
+            </select>
           </label>
 
-          <label>Data
-            <input id="evtDate" type="date" required />
+          <label>Ilha
+            <select id="evtIsland">
+              <option value="Todas as ilhas">Todas as ilhas</option>
+              <option value="Hanashima">Hanashima</option>
+              <option value="Botan">Botan</option>
+              <option value="Fujiwara">Fujiwara</option>
+              <option value="Sumirejima">Sumirejima</option>
+            </select>
           </label>
+
+          <label>Titulo
+            <input id="evtTitle" type="text" required placeholder="Ex: Prova de Historia" />
+          </label>
+
+          <div class="date-row">
+            <label>Inicio
+              <input id="evtStartDate" type="date" required />
+            </label>
+            <label>Fim
+              <input id="evtEndDate" type="date" required />
+            </label>
+          </div>
 
           <label>Hora (opcional)
             <input id="evtTime" type="time" />
           </label>
 
-          <label>Descrição (opcional)
-            <textarea id="evtDesc" rows="3" placeholder="Observações, sala, professor..."></textarea>
+          <label>Regra de calendario (opcional)
+            <input id="evtRule" type="text" placeholder="Ex: Segunda segunda-feira de janeiro" />
+          </label>
+
+          <label>Descricao
+            <textarea id="evtDesc" rows="2" placeholder="Contexto narrativo do evento..."></textarea>
+          </label>
+
+          <label>NPCs envolvidos (RPG)
+            <input id="evtNpcs" type="text" placeholder="Ex: Diretor Aoi, Clube de Navegacao" />
+          </label>
+
+          <label>Gancho de quest (RPG)
+            <textarea id="evtHook" rows="2" placeholder="O que inicia para os personagens?"></textarea>
+          </label>
+
+          <label>Consequencia se ignorado (RPG)
+            <textarea id="evtConsequence" rows="2" placeholder="Impacto no mundo/historia"></textarea>
+          </label>
+
+          <label>Status narrativo
+            <select id="evtStatus">
+              <option value="planejado">Planejado</option>
+              <option value="em-andamento">Em andamento</option>
+              <option value="concluido">Concluido</option>
+            </select>
+          </label>
+
+          <label class="checkbox">
+            <input id="evtLore" type="checkbox" /> Evento-chave de lore
           </label>
 
           <div class="modal-actions">
@@ -92,13 +204,8 @@
     </div>
 
     <footer>
-      <small>Dados salvos no seu navegador. Exportar/Importar para compartilhar com o grupo.</small>
+      <small>Dados salvos localmente. Use exportacao para compartilhar com o grupo.</small>
     </footer>
-    <!-- Mobile events bottom sheet (shown only on small screens) -->
-    <div id="mobileEventsSheet" class="events-sheet hidden" aria-hidden="true"></div>
-
-    <!-- Floating action button -->
-    <button id="fab" class="primary fab" aria-label="Novo evento">+</button>
   </div>
 
   <script src="app.js"></script>
