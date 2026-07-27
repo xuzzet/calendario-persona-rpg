@@ -88,6 +88,13 @@
     return fromISO(iso).toLocaleDateString("pt-BR");
   }
 
+  function normalizeISOToYear(iso, year) {
+    if (!iso) return toISO(new Date(year, 0, 1));
+    const d = fromISO(iso);
+    d.setFullYear(year);
+    return toISO(d);
+  }
+
   function formatMonthLabel(monthIndex) {
     dom.monthLabel.textContent = MONTHS[monthIndex] + " " + YEAR;
   }
@@ -132,8 +139,10 @@
   }
 
   function ensureEventShape(evt) {
-    const startDate = evt.startDate || evt.date;
-    const endDate = evt.endDate || evt.date || startDate;
+    const startDateRaw = evt.startDate || evt.date;
+    const endDateRaw = evt.endDate || evt.date || startDateRaw;
+    const startDate = normalizeISOToYear(startDateRaw, YEAR);
+    const endDate = normalizeISOToYear(endDateRaw, YEAR);
     return {
       id: evt.id || uid(),
       title: evt.title || "Sem titulo",
@@ -833,10 +842,14 @@
   }
 
   function init() {
+    state.currentMonth = 0;
+    state.selectedDateISO = toISO(new Date(YEAR, 0, 1));
+    state.viewMode = "month";
     loadEvents();
     ensureInitialData();
     clampSelectedDateTo2016();
     bindEvents();
+    state.currentMonth = fromISO(state.selectedDateISO).getMonth();
     renderAll();
   }
 
