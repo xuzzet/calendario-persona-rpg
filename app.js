@@ -1,7 +1,7 @@
 // Calendario oficial do Arquipelago da Nascente
 (function(){
   'use strict';
-  const YEAR = new Date().getFullYear();
+  const YEAR = 2016;
   const EVENTS_KEY = 'nascente-calendar-official-' + YEAR;
   const SEED_VERSION_KEY = 'nascente-official-seed-v2-' + YEAR;
 
