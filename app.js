@@ -1,8 +1,9 @@
-// Calendar app for "Arquipélago da Nascente" - year 2016
+// Calendario oficial do Arquipelago da Nascente
 (function(){
   'use strict';
-  const EVENTS_KEY = 'nascente-calendar-2016';
-  const YEAR = 2016;
+  const YEAR = new Date().getFullYear();
+  const EVENTS_KEY = 'nascente-calendar-official-' + YEAR;
+  const SEED_VERSION_KEY = 'nascente-official-seed-v2-' + YEAR;
 
   // DOM
   const calendarGrid = document.getElementById('calendarGrid');
@@ -31,7 +32,7 @@
   let mobileSheetHandler = null;
 
   // state
-  let currentMonth = 1; // February (0-based will be converted)
+  let currentMonth = 0;
   let currentYear = YEAR;
   let events = {}; // keyed by id
   let selectedDateISO = null;
@@ -104,9 +105,38 @@
     monthLabel.textContent = `${months[m]} ${y}`;
   }
 
-  // init: start with February 2016 display
+  function nthWeekdayOfMonth(year, monthIndex, weekday, nth){
+    const first = new Date(year, monthIndex, 1);
+    const offset = (weekday - first.getDay() + 7) % 7;
+    return new Date(year, monthIndex, 1 + offset + (nth - 1) * 7);
+  }
+
+  function lastWeekStartOfMonth(year, monthIndex){
+    const lastDay = new Date(year, monthIndex + 1, 0);
+    const day = lastDay.getDate();
+    return new Date(year, monthIndex, Math.max(1, day - 6));
+  }
+
+  function firstWeekStartOfMonth(year, monthIndex){
+    return new Date(year, monthIndex, 1);
+  }
+
+  function secondWeekStartOfMonth(year, monthIndex){
+    return new Date(year, monthIndex, 8);
+  }
+
+  function thirdWeekStartOfMonth(year, monthIndex){
+    return new Date(year, monthIndex, 15);
+  }
+
+  function endOfMonthMarker(year, monthIndex){
+    const last = new Date(year, monthIndex + 1, 0).getDate();
+    return new Date(year, monthIndex, Math.max(1, last - 2));
+  }
+
+  // init: start with January of the selected year
   (function initState(){
-    currentMonth = 1; // February (0-indexed)
+    currentMonth = 0;
     currentYear = YEAR;
   })();
 
@@ -511,7 +541,7 @@
     var url = URL.createObjectURL(blob);
     var a = document.createElement('a');
     a.href = url;
-    a.download = 'nascente-events-2016.json';
+    a.download = 'nascente-events-' + YEAR + '.json';
     a.click();
     URL.revokeObjectURL(url);
   });
@@ -568,10 +598,12 @@
     importFile.value = '';
   });
 
-  // initial prepopulate: add first-day-of-classes if not present
+  // seed official yearly calendar once per year key
   function ensureInitial(){
     loadEvents();
-    const firstClassDate = '2016-02-10';
+    var alreadySeeded = localStorage.getItem(SEED_VERSION_KEY) === '1';
+    if(alreadySeeded) return;
+
     var changed = false;
 
     function hasEventExact(title, date){
@@ -581,56 +613,91 @@
       });
     }
 
-    function addSeedEvent(title, date, type, time, desc){
-      if(hasEventExact(title, date)) return;
+    function addOfficialEvent(title, dateObj, type, desc){
+      var dateISO = typeof dateObj === 'string' ? dateObj : formatDateISO(dateObj);
+      if(hasEventExact(title, dateISO)) return;
       var id = uid();
       events[id] = {
         id: id,
         title: title,
-        date: date,
-        time: time || '',
+        date: dateISO,
+        time: '',
         desc: desc || '',
         type: type || 'event'
       };
       changed = true;
     }
 
-    function addRangeSeedEvents(startDay, endDay, monthIndex, title, type){
-      for(var d = startDay; d <= endDay; d++){
-        var dateISO = formatDateISO(new Date(YEAR, monthIndex, d));
-        addSeedEvent(title, dateISO, type);
-      }
+    function addMonthDay(title, monthIndex, day, type, desc){
+      addOfficialEvent(title, new Date(YEAR, monthIndex, day), type, desc);
     }
 
-    var hasClassStart = objValues(events).some(function(e){ return e.date === firstClassDate && (e.title || '').toLowerCase().indexOf('aulas') !== -1; });
-    if(!hasClassStart){
-      addSeedEvent(
-        'Início das aulas (1º ano)',
-        firstClassDate,
-        'event',
-        '07:00',
-        'Primeiro dia do ano letivo na Kurohana — aulas em período integral'
-      );
-    }
+    // Janeiro
+    addMonthDay('Ano Novo da Nascente (Shinnenkai / Reveillon)', 0, 1, 'holiday', 'Maior celebracao familiar do ano, com a Primeira Luz da Nascente ao amanhecer.');
+    addOfficialEvent('Semana dos Antepassados', secondWeekStartOfMonth(YEAR, 0), 'event', 'Marco de inicio da segunda semana de janeiro.');
+    addOfficialEvent('Dia dos Novos Adultos', nthWeekdayOfMonth(YEAR, 0, 1, 2), 'event', 'Segunda segunda-feira de janeiro. Cerimonia para jovens de 18 anos.');
+    addOfficialEvent('Festival das Lanternas do Mar', lastWeekStartOfMonth(YEAR, 0), 'event', 'Homenagem em Sumirejima durante a ultima semana de janeiro.');
 
-    addSeedEvent('Prova diagnóstica', '2016-02-24', 'exam');
-    addSeedEvent('Prova parcial', '2016-03-17', 'exam');
-    addSeedEvent('Prova de Ciências/Geografia', '2016-04-22', 'exam');
-    addSeedEvent('Prova parcial', '2016-05-20', 'exam');
-    addRangeSeedEvents(11, 15, 6, 'Provas de meio de ano', 'exam');
-    addSeedEvent('Avaliação de retorno', '2016-09-16', 'exam');
-    addSeedEvent('Prova parcial', '2016-10-21', 'exam');
-    addRangeSeedEvents(14, 18, 10, 'Provas finais', 'exam');
-    addSeedEvent('Recuperação', '2016-12-03', 'exam');
+    // Fevereiro
+    addMonthDay('Setsubun da Nascente', 1, 3, 'event', 'Festival japones adaptado com rituais de protecao em todas as ilhas.');
+    addMonthDay('Cerimonia de Abertura Escolar (Kurohana)', 1, 10, 'event', 'Inicio oficial do ano escolar da Academia Kurohana.');
+    addOfficialEvent('Primeira Semana de Provas', endOfMonthMarker(YEAR, 1), 'exam', 'Periodo de avaliacoes no final de fevereiro.');
+    addOfficialEvent('Carnaval da Nascente', new Date(YEAR, 1, 28), 'event', 'Blocos das quatro ilhas e festividades em Botan no final de fevereiro.');
 
-    addSeedEvent('Festival cultural', '2016-03-21', 'event');
-    addSeedEvent('Torneio interclubes', '2016-04-18', 'event');
-    addSeedEvent('Excursão pelas ilhas', '2016-05-30', 'event');
-    addSeedEvent('Provas de meio de ano', '2016-07-12', 'exam');
-    addSeedEvent('Festival esportivo', '2016-09-20', 'event');
-    addSeedEvent('Vigília da memória', '2016-12-31', 'event');
+    // Marco
+    addOfficialEvent('Semana dos Clubes', firstWeekStartOfMonth(YEAR, 2), 'event', 'Apresentacoes e entrada de novos membros nos clubes da Kurohana.');
+    addOfficialEvent('Festival Cultural das Quatro Ilhas', secondWeekStartOfMonth(YEAR, 2), 'event', 'Representacoes de culinaria, historia, musica e artes.');
+    addMonthDay('Festival da Primavera da Nascente', 2, 21, 'event', 'Hanami com piqueniques nos parques de Hanashima.');
+    addOfficialEvent('Semana da Comunidade', lastWeekStartOfMonth(YEAR, 2), 'event', 'Atividades comunitarias em todas as ilhas.');
+
+    // Abril
+    addMonthDay('Fundacao do Arquipelago da Nascente', 3, 12, 'holiday', 'Data oficial da criacao da Nascente moderna.');
+    addOfficialEvent('Festival das Flores', secondWeekStartOfMonth(YEAR, 3), 'event', 'Celebracoes florais em Hanashima na segunda semana de abril.');
+    addOfficialEvent('Feira de Artes da Nascente', endOfMonthMarker(YEAR, 3), 'event', 'Evento de pintura, literatura, musica e artesanato no final de abril.');
+
+    // Maio
+    addMonthDay('Dia do Trabalho da Nascente', 4, 1, 'holiday', 'Homenagem aos trabalhadores em todas as ilhas.');
+    addOfficialEvent('Dia das Familias', nthWeekdayOfMonth(YEAR, 4, 0, 2), 'holiday', 'Segundo domingo de maio.');
+    addOfficialEvent('Feira Cultural da Kurohana', thirdWeekStartOfMonth(YEAR, 4), 'event', 'Grande evento escolar na terceira semana de maio.');
+
+    // Junho
+    addOfficialEvent('Festa Junina da Nascente (mes inteiro)', firstWeekStartOfMonth(YEAR, 5), 'event', 'Celebracao que acontece durante todo junho em todas as ilhas.');
+    addMonthDay('Tanabata da Nascente', 5, 7, 'event', 'Desejos em papeis coloridos pendurados em arvores.');
+    addMonthDay('Festival das Mares', 5, 21, 'event', 'Celebracao da relacao com o oceano em Sumirejima.');
+
+    // Julho
+    addMonthDay('Festival das Estrelas', 6, 7, 'event', 'Festival noturno com lanternas e apresentacoes em Botan.');
+    addOfficialEvent('Festival de Verao da Nascente', endOfMonthMarker(YEAR, 6), 'event', 'Maior festival de verao no final de julho.');
+    addOfficialEvent('Inicio das Ferias de Verao', lastWeekStartOfMonth(YEAR, 6), 'holiday', 'Inicio da pausa escolar na ultima semana de julho.');
+
+    // Agosto
+    addMonthDay('Obon da Nascente', 7, 15, 'holiday', 'Homenagem aos mortos com memoria familiar em todas as ilhas.');
+    addOfficialEvent('Festival das Aguas', thirdWeekStartOfMonth(YEAR, 7), 'event', 'Barcos iluminados cruzam a costa de Sumirejima.');
+    addOfficialEvent('Retorno das Aulas', endOfMonthMarker(YEAR, 7), 'event', 'Retorno da Kurohana apos as ferias.');
+
+    // Setembro
+    addOfficialEvent('Campeonato das Quatro Ilhas', firstWeekStartOfMonth(YEAR, 8), 'event', 'Competicao escolar com baseball, arco, artes marciais e atletismo.');
+    addOfficialEvent('Dia do Respeito aos Anciaos', nthWeekdayOfMonth(YEAR, 8, 1, 2), 'holiday', 'Segunda segunda-feira de setembro.');
+
+    // Outubro
+    addOfficialEvent('Semana da Historia da Nascente', firstWeekStartOfMonth(YEAR, 9), 'event', 'Exposicoes historicas e apresentacoes em Fujiwara.');
+    addMonthDay('Festival das Mascaras da Nascente', 9, 31, 'event', 'Mistura de Halloween com mascaras tradicionais japonesas.');
+
+    // Novembro
+    addMonthDay('Dia da Cultura', 10, 3, 'holiday', 'Eventos artisticos e culturais em Hanashima.');
+    addMonthDay('Dia da Gratidao pelo Trabalho', 10, 23, 'holiday', 'Homenagem aos profissionais da comunidade.');
+    addOfficialEvent('Festival das Quatro Cozinhas', lastWeekStartOfMonth(YEAR, 10), 'event', 'Festival gastronomico em Fujiwara na ultima semana de novembro.');
+
+    // Dezembro
+    addMonthDay('Dia da Tragedia da Virada', 11, 4, 'holiday', 'Dia oficial de memoria com homenagens nas escolas.');
+    addOfficialEvent('Provas Finais (Kurohana)', secondWeekStartOfMonth(YEAR, 11), 'exam', 'Inicio da segunda semana de dezembro.');
+    addOfficialEvent('Cerimonia de Formatura', thirdWeekStartOfMonth(YEAR, 11), 'event', 'Encerramento do ano escolar em Hanashima.');
+    addMonthDay('Natal da Nascente (24 e 25)', 11, 24, 'holiday', 'Ceias, presentes e encontros familiares em todas as ilhas.');
+    addMonthDay('Natal da Nascente (24 e 25)', 11, 25, 'holiday', 'Ceias, presentes e encontros familiares em todas as ilhas.');
+    addMonthDay('Noite da Passagem', 11, 31, 'holiday', 'Encerramento do ano com fogos sobre o oceano.');
 
     if(changed) saveEvents();
+    localStorage.setItem(SEED_VERSION_KEY, '1');
   }
 
   // clicking outside modal closes it
